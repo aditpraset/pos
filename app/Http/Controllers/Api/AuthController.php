@@ -35,7 +35,7 @@ class AuthController extends Controller implements HasMiddleware
         $guard = Auth::guard('api');
 
         if (! $token = $guard->attempt($credentials)) {
-            return respondWithToken(401, false, 'Unauthorized', null, null);
+            return respondWithToken(401, false, 'Silahkan periksa kembali email dan password Anda', null, null);
         }
         $users = User::find($guard->user()->id);
 
