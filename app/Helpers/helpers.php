@@ -19,6 +19,6 @@ if (!function_exists('respondWithToken')) {
                 'refresh_token' => $token, // Using the same token as refresh_token for now
                 'data' => $data
             ]
-        ]);
+        ],  $code);
     }
 }
