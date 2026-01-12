@@ -22,3 +22,24 @@ if (!function_exists('respondWithToken')) {
         ],  $code);
     }
 }
+
+if (!function_exists('respondWithData')) {
+    /**
+     * Get a standardized API response structure.
+     *
+     * @param  int $code
+     * @param  bool $status
+     * @param  string $message
+     * @param  mixed $data
+     * @return \Illuminate\Http\JsonResponse
+     */
+    function respondWithData($code, $status, $message, $data = null)
+    {
+        return response()->json([
+            'code' => $code,
+            'status' => $status,
+            'message' => $message,
+            'data' => $data
+        ], $code);
+    }
+}
