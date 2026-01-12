@@ -17,7 +17,7 @@
     <link href="{{ asset('assets/tabler/dashboard/dist/css/tabler.css?') . $v }}" rel="stylesheet" />
     <!-- END GLOBAL MANDATORY STYLES -->
     <!-- BEGIN CUSTOM FONT -->
-    <link href="{{ asset('assets/img/logo.svg') }}" rel="icon">
+    <link href="{{ asset('assets/img/logo.png') }}" rel="icon">
     <style>
         @import url("https://rsms.me/inter/inter.css");
     </style>
@@ -265,22 +265,6 @@
                                                 href="{{ route('dashboard.superadmin') }}">
                                                 Superadmin Dashboard
                                             </a>
-                                            <a class="dropdown-item {{ Request::routeIs('dashboard.kepala_depo') ? 'active' : '' }}"
-                                                href="{{ route('dashboard.kepala_depo') }}">
-                                                Gudang Pangan Kita Dashboard
-                                            </a>
-                                            <a class="dropdown-item {{ Request::routeIs('dashboard.sales') ? 'active' : '' }}"
-                                                href="{{ route('dashboard.sales') }}">
-                                                Rumah Pangan Kita Dashboard
-                                            </a>
-                                            <a class="dropdown-item {{ Request::routeIs('dashboard.supplier') ? 'active' : '' }}"
-                                                href="{{ route('dashboard.supplier') }}">
-                                                Supplier Dashboard
-                                            </a>
-                                            <a class="dropdown-item {{ Request::routeIs('dashboard.koperasi') ? 'active' : '' }}"
-                                                href="{{ route('dashboard.koperasi') }}">
-                                                Koperasi Dashboard
-                                            </a>
                                         </div>
                                     </li>
 
@@ -371,18 +355,6 @@
                                             <a class="dropdown-item {{ Request::routeIs('reports.penjualan') ? 'active' : '' }}"
                                                 href="{{ route('reports.penjualan') }}">
                                                 Laporan Penjualan
-                                            </a>
-                                            <a class="dropdown-item {{ Request::routeIs('reports.pengiriman') ? 'active' : '' }}"
-                                                href="{{ route('reports.pengiriman') }}">
-                                                Laporan Pengiriman
-                                            </a>
-                                            <a class="dropdown-item {{ Request::routeIs('reports.penagihan') ? 'active' : '' }}"
-                                                href="{{ route('reports.penagihan') }}">
-                                                Laporan Penagihan
-                                            </a>
-                                            <a class="dropdown-item {{ Request::routeIs('reports.produk') ? 'active' : '' }}"
-                                                href="{{ route('reports.produk') }}">
-                                                Laporan Produk
                                             </a>
                                         </div>
                                     </li>

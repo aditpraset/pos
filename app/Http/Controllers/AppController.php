@@ -31,7 +31,51 @@ class AppController extends Controller
 
     public function superadminDashboard()
     {
-        return view('dashboard.superadmin_dashboard');
+        // Widget Data
+        $monthlySales = \App\Models\Order::whereMonth('created_at', date('m'))
+            ->whereYear('created_at', date('Y'))
+            ->sum('total_amount');
+
+        $totalOrders = \App\Models\Order::count();
+
+        $dailySales = \App\Models\Order::whereDate('created_at', date('Y-m-d'))
+            ->sum('total_amount');
+
+        $dailyOrders = \App\Models\Order::whereDate('created_at', date('Y-m-d'))
+            ->count();
+
+        // Chart 1: Monthly Sales Trend (Current Year)
+        $salesTrend = \App\Models\Order::selectRaw('MONTH(created_at) as month, SUM(total_amount) as total')
+            ->whereYear('created_at', date('Y'))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->pluck('total', 'month')
+            ->toArray();
+
+        // Fill missing months with 0
+        $monthlySalesData = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $monthlySalesData[] = $salesTrend[$i] ?? 0;
+        }
+
+        // Chart 2: Order Status Distribution
+        $statusDistribution = \App\Models\Order::selectRaw('status_id, count(*) as total')
+            ->groupBy('status_id')
+            ->with('status')
+            ->get();
+
+        $statusLabels = $statusDistribution->pluck('status.name');
+        $statusData = $statusDistribution->pluck('total');
+
+        return view('dashboard.superadmin_dashboard', compact(
+            'monthlySales',
+            'totalOrders',
+            'dailySales',
+            'dailyOrders',
+            'monthlySalesData',
+            'statusLabels',
+            'statusData'
+        ));
     }
 
     public function kepalaDepoDashboard()
@@ -144,9 +188,84 @@ class AppController extends Controller
         return view('reports.index');
     }
 
-    public function reportsPenjualan()
+    public function reportsPenjualan(\Illuminate\Http\Request $request)
     {
-        return view('reports.penjualan');
+        // 1. Filter Date
+        $startDate = $request->input('start_date', date('Y-m-01'));
+        $endDate = $request->input('end_date', date('Y-m-t'));
+
+        // 2. Query Orders
+        $query = \App\Models\Order::with(['status', 'paymentMethod'])
+            ->whereDate('created_at', '>=', $startDate)
+            ->whereDate('created_at', '<=', $endDate);
+
+        $orders = $query->orderBy('created_at', 'desc')->get();
+
+        // 3. Summary Stats
+        $totalSales = $orders->sum('total_amount');
+        $totalTransactions = $orders->count();
+        $totalItemsSold = $orders->sum('quantity');
+
+        // Calculate days difference for average
+        $start = \Carbon\Carbon::parse($startDate);
+        $end = \Carbon\Carbon::parse($endDate);
+        $days = $start->diffInDays($end) + 1;
+        $averageDailySales = $days > 0 ? $totalSales / $days : 0;
+
+        // 4. Chart: Sales Trend (Daily within range)
+        $salesTrendData = \App\Models\Order::selectRaw('DATE(created_at) as date, SUM(total_amount) as total')
+            ->whereDate('created_at', '>=', $startDate)
+            ->whereDate('created_at', '<=', $endDate)
+            ->groupBy('date')
+            ->orderBy('date')
+            ->pluck('total', 'date')
+            ->toArray();
+
+        // Fill dates
+        $chartDates = [];
+        $chartValues = [];
+        $current = $start->copy();
+        while ($current <= $end) {
+            $dateStr = $current->format('Y-m-d');
+            $chartDates[] = $current->format('d M');
+            $chartValues[] = $salesTrendData[$dateStr] ?? 0;
+            $current->addDay();
+        }
+
+        // 5. Chart: Sales by Category
+        $salesByCategory = \App\Models\OrderDetail::join('products', 'order_details.product_id', '=', 'products.id')
+            ->join('categories', 'products.category_id', '=', 'categories.id')
+            ->join('orders', 'order_details.order_id', '=', 'orders.id')
+            ->whereDate('orders.created_at', '>=', $startDate)
+            ->whereDate('orders.created_at', '<=', $endDate)
+            ->selectRaw('categories.name, SUM(order_details.quantity) as total_qty')
+            ->groupBy('categories.id', 'categories.name')
+            ->get();
+
+        $categoryLabels = $salesByCategory->pluck('name');
+        $categoryData = $salesByCategory->pluck('total_qty');
+
+        return view('reports.penjualan', compact(
+            'orders',
+            'startDate',
+            'endDate',
+            'totalSales',
+            'totalTransactions',
+            'totalItemsSold',
+            'averageDailySales',
+            'chartDates',
+            'chartValues',
+            'categoryLabels',
+            'categoryData'
+        ));
+    }
+
+    public function reportsPenjualanDetail($id)
+    {
+        $order = \App\Models\Order::with(['status', 'paymentMethod', 'orderDetails.product.uom'])
+            ->findOrFail($id);
+
+        return view('reports.penjualan_detail', compact('order'));
     }
 
     public function reportsKunjunganSales()

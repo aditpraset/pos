@@ -47,10 +47,10 @@
                                 </div>
                                 <div class="col">
                                     <div class="font-weight-medium">
-                                        Total Penjualan Bulan Ini
+                                        Total Penjualan
                                     </div>
                                     <div class="text-secondary">
-                                        Rp 25.000.000
+                                        Rp {{ number_format($totalSales, 0, ',', '.') }}
                                     </div>
                                 </div>
                             </div>
@@ -74,10 +74,10 @@
                                 </div>
                                 <div class="col">
                                     <div class="font-weight-medium">
-                                        Rata-rata Penjualan Harian
+                                        Rata-rata Harian
                                     </div>
                                     <div class="text-secondary">
-                                        Rp 833.333
+                                        Rp {{ number_format($averageDailySales, 0, ',', '.') }}
                                     </div>
                                 </div>
                             </div>
@@ -104,7 +104,7 @@
                                         Jumlah Transaksi
                                     </div>
                                     <div class="text-secondary">
-                                        50 Transaksi
+                                        {{ $totalTransactions }} Transaksi
                                     </div>
                                 </div>
                             </div>
@@ -131,7 +131,7 @@
                                         Produk Terjual
                                     </div>
                                     <div class="text-secondary">
-                                        1200 Unit
+                                        {{ $totalItemsSold }} Unit
                                     </div>
                                 </div>
                             </div>
@@ -170,76 +170,56 @@
 
             <div class="card">
                 <div class="card-body">
-                    <div class="mb-3">
+                    <form action="{{ route('reports.penjualan') }}" method="GET" class="mb-3">
                         <label class="form-label">Filter Periode</label>
-                        <div class="input-icon">
-                            <input type="text" class="form-control daterange" value="01/07/2025 - 31/07/2025">
-                            <span class="input-icon-addon">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
-                                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path
-                                        d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z" />
-                                    <path d="M16 3v4" />
-                                    <path d="M8 3v4" />
-                                    <path d="M4 11h16" />
-                                    <path d="M11 15h1" />
-                                    <path d="M12 15v3" />
-                                </svg>
-                            </span>
+                        <div class="row g-2">
+                            <div class="col-auto">
+                                <input type="date" class="form-control" name="start_date"
+                                    value="{{ $startDate }}">
+                            </div>
+                            <div class="col-auto align-self-center">
+                                -
+                            </div>
+                            <div class="col-auto">
+                                <input type="date" class="form-control" name="end_date" value="{{ $endDate }}">
+                            </div>
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-primary">Filter</button>
+                            </div>
                         </div>
-                    </div>
+                    </form>
                     <div class="table-responsive">
                         <table id="salesReportTable" class="table table-vcenter card-table">
                             <thead>
                                 <tr>
-                                    <th>No. SO</th>
+                                    <th>No. Order</th>
                                     <th>Tanggal</th>
-                                    <th>GPK</th>
-                                    <th>RPK</th>
+                                    <th>Pelanggan</th>
+                                    <th>Pembayaran</th>
                                     <th>Total Nilai</th>
                                     <th>Status</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>SO001</td>
-                                    <td>01 Juli 2025</td>
-                                    <td>GPK Jakarta</td>
-                                    <td>RPK001</td>
-                                    <td>Rp 1.500.000</td>
-                                    <td><span class="badge bg-success me-1"></span> Terkirim</td>
-                                    <td>
-                                        <a href="#"
-                                            class="btn btn-info btn-sm">Detail SO</a>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>SO002</td>
-                                    <td>02 Juli 2025</td>
-                                    <td>GPK Surabaya</td>
-                                    <td>RPK002</td>
-                                    <td>Rp 2.000.000</td>
-                                    <td><span class="badge bg-success me-1"></span> Terkirim</td>
-                                    <td>
-                                        <a href="#"
-                                            class="btn btn-info btn-sm">Detail SO</a>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>SO004</td>
-                                    <td>01 Juli 2025</td>
-                                    <td>GPK Bandung</td>
-                                    <td>RPK004</td>
-                                    <td>Rp 3.200.000</td>
-                                    <td><span class="badge bg-success me-1"></span> Terkirim</td>
-                                    <td>
-                                        <a href="#"
-                                            class="btn btn-info btn-sm">Detail SO</a>
-                                    </td>
-                                </tr>
+                                @foreach ($orders as $order)
+                                    <tr>
+                                        <td>{{ $order->order_number }}</td>
+                                        <td>{{ $order->created_at->format('d M Y') }}</td>
+                                        <td>{{ $order->customer_name }}</td>
+                                        <td>{{ $order->paymentMethod->name ?? '-' }}</td>
+                                        <td>Rp {{ number_format($order->total_amount, 0, ',', '.') }}</td>
+                                        <td>
+                                            <span
+                                                class="badge bg-{{ $order->status_id == 1 ? 'warning' : ($order->status_id == 2 ? 'success' : 'danger') }} me-1"></span>
+                                            {{ $order->status->name ?? 'Unknown' }}
+                                        </td>
+                                        <td>
+                                            <a href="{{ route('reports.penjualan_detail', $order->id) }}"
+                                                class="btn btn-info btn-sm">Detail Order</a>
+                                        </td>
+                                    </tr>
+                                @endforeach
                             </tbody>
                         </table>
                     </div>
@@ -262,10 +242,10 @@
                 new Chart(salesTrendCtx, {
                     type: 'line',
                     data: {
-                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul'],
+                        labels: @json($chartDates),
                         datasets: [{
-                            label: 'Penjualan (Juta Rp)',
-                            data: [10, 15, 12, 18, 20, 22, 25], // Contoh data
+                            label: 'Penjualan (Rp)',
+                            data: @json($chartValues),
                             borderColor: '#007bff',
                             backgroundColor: 'rgba(0, 123, 255, 0.2)',
                             fill: true,
@@ -281,12 +261,38 @@
                             },
                             title: {
                                 display: false,
-                                text: 'Tren Penjualan Bulanan'
+                                text: 'Tren Penjualan (Harian)'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += new Intl.NumberFormat('id-ID', {
+                                                style: 'currency',
+                                                currency: 'IDR'
+                                            }).format(context.parsed.y);
+                                        }
+                                        return label;
+                                    }
+                                }
                             }
                         },
                         scales: {
                             y: {
-                                beginAtZero: true
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value, index, values) {
+                                        return new Intl.NumberFormat('id-ID', {
+                                            style: 'currency',
+                                            currency: 'IDR',
+                                            maximumSignificantDigits: 3
+                                        }).format(value);
+                                    }
+                                }
                             }
                         }
                     }
@@ -297,11 +303,13 @@
                 new Chart(salesCategoryCtx, {
                     type: 'bar',
                     data: {
-                        labels: ['Bahan Pokok', 'Minyak & Lemak', 'Gula & Pemanis', 'Telur & Susu', 'Bumbu Dapur'],
+                        labels: @json($categoryLabels),
                         datasets: [{
-                            label: 'Stok Tersedia (Unit)',
-                            data: [500, 300, 150, 200, 100], // Contoh data
-                            backgroundColor: ['#28a745', '#ffc107', '#17a2b8', '#dc3545', '#6c757d'],
+                            label: 'Total Qty Terjual',
+                            data: @json($categoryData),
+                            backgroundColor: ['#28a745', '#ffc107', '#17a2b8', '#dc3545', '#6c757d',
+                                '#007bff', '#6610f2'
+                            ],
                         }]
                     },
                     options: {

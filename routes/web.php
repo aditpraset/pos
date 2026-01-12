@@ -109,5 +109,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/produk', [AppController::class, 'reportsProduk'])->name('produk');
         Route::get('/program-promo', [AppController::class, 'reportsProgramPromo'])->name('program_promo');
         Route::get('/customer', [AppController::class, 'reportsCustomer'])->name('customer');
+
+        // Order Detail Route (Added for Sales Report)
+        Route::get('/penjualan/{id}', [AppController::class, 'reportsPenjualanDetail'])->name('penjualan_detail');
     });
 });
