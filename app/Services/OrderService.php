@@ -78,7 +78,7 @@ class OrderService
 
                 // Create order
                 $order = Order::create([
-                    'status_id' => 1, // Default status: pending/new
+                    'status_id' => 2, // Default status: pending/new
                     'payment_method_id' => $data['payment_method_id'] ?? null,
                     'order_number' => $this->generateOrderNumber(),
                     'quantity' => $totals['quantity'],
