@@ -108,7 +108,7 @@
                                                 Total Terjual (Tahun Ini)
                                             </div>
                                             <div class="text-secondary">
-                                                1500 Unit
+                                                {{ number_format($totalSoldYear, 0, ',', '.') }} Unit
                                             </div>
                                         </div>
                                     </div>
@@ -137,7 +137,7 @@
                                                 Total Penjualan (Tahun Ini)
                                             </div>
                                             <div class="text-secondary">
-                                                Rp 150.000.000
+                                                Rp {{ number_format($totalSalesValueYear, 0, ',', '.') }}
                                             </div>
                                         </div>
                                     </div>
@@ -150,23 +150,54 @@
                         <div class="col-12">
                             <div class="card">
                                 <div class="card-header">
-                                    <h3 class="card-title">Riwayat Penambahan Produk</h3>
+                                    <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs">
+                                        <li class="nav-item">
+                                            <a href="#tabs-history" class="nav-link active" data-bs-toggle="tab">Riwayat
+                                                Penambahan</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="#tabs-orders" class="nav-link" data-bs-toggle="tab">Riwayat
+                                                Penjualan</a>
+                                        </li>
+                                    </ul>
                                 </div>
                                 <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-vcenter card-table" id="productLogTable">
-                                            <thead>
-                                                <tr>
-                                                    <th>No</th>
-                                                    <th>Tanggal</th>
-                                                    <th>Penambahan</th>
-                                                    <th>Stok</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-
-                                            </tbody>
-                                        </table>
+                                    <div class="tab-content">
+                                        <div class="tab-pane active show" id="tabs-history">
+                                            <div class="table-responsive">
+                                                <table class="table table-vcenter card-table" id="productLogTable">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>No</th>
+                                                            <th>Tanggal</th>
+                                                            <th>Penambahan</th>
+                                                            <th>Stok</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane" id="tabs-orders">
+                                            <div class="table-responsive">
+                                                <table class="table table-vcenter card-table" id="productOrderTable"
+                                                    style="width:100%">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>No</th>
+                                                            <th>No. Order</th>
+                                                            <th>Tanggal</th>
+                                                            <th>Pelanggan</th>
+                                                            <th>Qty</th>
+                                                            <th>Total</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -267,6 +298,52 @@
                         {
                             data: 'last_stock',
                             name: 'last_stock'
+                        }
+                    ]
+                });
+
+                // Product Order History DataTable
+                $('#productOrderTable').DataTable({
+                    processing: true,
+                    serverSide: true,
+                    ajax: {
+                        url: "{{ route('manajemen_produk.show', $product->id) }}",
+                        data: function(d) {
+                            d.type = 'orders';
+                        }
+                    },
+                    columns: [{
+                            data: 'DT_RowIndex',
+                            name: 'DT_RowIndex',
+                            orderable: false,
+                            searchable: false
+                        },
+                        {
+                            data: 'order_number',
+                            name: 'orders.order_number',
+                            render: function(data, type, row) {
+                                let url = "{{ route('reports.penjualan_detail', ':id') }}".replace(
+                                    ':id', row.order_id);
+                                return '<a href="' + url + '" class="text-primary">' + data + '</a>';
+                            }
+                        },
+                        {
+                            data: 'order_date',
+                            name: 'orders.created_at'
+                        },
+                        {
+                            data: 'customer_name',
+                            name: 'orders.customer_name'
+                        },
+                        {
+                            data: 'quantity',
+                            name: 'quantity',
+                            className: 'text-center'
+                        },
+                        {
+                            data: 'total_amount',
+                            name: 'total_amount',
+                            className: 'text-end'
                         }
                     ]
                 });

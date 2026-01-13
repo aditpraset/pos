@@ -42,10 +42,62 @@ class ProductController extends Controller
                 ->rawColumns(['image', 'action'])
                 ->make(true);
         }
+        // Dashboard Stats
+        $totalProducts = Product::count();
+
+        // Top Selling Product (This Month)
+        $topSellingProduct = \App\Models\OrderDetail::join('orders', 'order_details.order_id', '=', 'orders.id')
+            ->join('products', 'order_details.product_id', '=', 'products.id')
+            ->whereMonth('orders.created_at', date('m'))
+            ->whereYear('orders.created_at', date('Y'))
+            ->select('products.name', 'products.uom_id', DB::raw('SUM(order_details.quantity) as total_qty'))
+            ->groupBy('products.id', 'products.name', 'products.uom_id')
+            ->orderByDesc('total_qty')
+            ->with('product.uom')
+            ->first();
+
+        $topSellingProductName = $topSellingProduct ? $topSellingProduct->name : '-';
+
+        $lowStockCount = Product::where('stock', '<', 10)->count(); // Threshold < 10
+
+        $totalStockValue = Product::select(DB::raw('SUM(price * stock) as total_value'))->value('total_value');
+
+        // Chart 1: Monthly Sales (Current Year)
+        $monthlySalesData = \App\Models\OrderDetail::join('orders', 'order_details.order_id', '=', 'orders.id')
+            ->whereYear('orders.created_at', date('Y'))
+            ->select(DB::raw('MONTH(orders.created_at) as month'), DB::raw('SUM(order_details.quantity) as total_qty'))
+            ->groupBy('month')
+            ->pluck('total_qty', 'month')
+            ->toArray();
+
+        $chartSalesData = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $chartSalesData[] = $monthlySalesData[$i] ?? 0;
+        }
+
+        // Chart 2: Stock by Category
+        $stockByCategory = Product::join('categories', 'products.category_id', '=', 'categories.id')
+            ->select('categories.name', DB::raw('SUM(products.stock) as total_stock'))
+            ->groupBy('categories.id', 'categories.name')
+            ->get();
+
+        $chartStockLabels = $stockByCategory->pluck('name');
+        $chartStockData = $stockByCategory->pluck('total_stock');
 
         $categories = Category::all();
         $uoms = Uom::all();
-        return view('manajemen_produk_penawaran.product', compact('categories', 'uoms'));
+
+        return view('manajemen_produk_penawaran.product', compact(
+            'categories',
+            'uoms',
+            'totalProducts',
+            'topSellingProductName',
+            'lowStockCount',
+            'totalStockValue',
+            'chartSalesData',
+            'chartStockLabels',
+            'chartStockData'
+        ));
     }
 
     public function store(Request $request)
@@ -121,22 +173,61 @@ class ProductController extends Controller
         $product = Product::with(['category', 'uom'])->findOrFail($id);
 
         if ($request->ajax()) {
-            $query = ProductLog::where('product_id', $id)->orderBy('created_at', 'desc');
-            return DataTables::of($query)
-                ->addIndexColumn()
-                ->editColumn('created_at', function ($row) {
-                    return $row->created_at->format('d F Y H:i');
-                })
-                ->editColumn('added_quantity', function ($row) {
-                    return number_format($row->added_quantity, 0, ',', '.');
-                })
-                ->editColumn('last_stock', function ($row) {
-                    return number_format($row->last_stock, 0, ',', '.');
-                })
-                ->make(true);
+            if ($request->type == 'orders') {
+                $query = \App\Models\OrderDetail::with(['order'])
+                    ->where('product_id', $id)
+                    ->join('orders', 'order_details.order_id', '=', 'orders.id')
+                    ->select('order_details.*', 'orders.created_at as order_date', 'orders.order_number', 'orders.customer_name')
+                    ->orderBy('orders.created_at', 'desc');
+
+                return DataTables::of($query)
+                    ->addIndexColumn()
+                    ->editColumn('order_date', function ($row) {
+                        return \Carbon\Carbon::parse($row->order_date)->format('d F Y H:i');
+                    })
+                    ->addColumn('customer_name', function ($row) {
+                        return $row->customer_name;
+                    })
+                    ->editColumn('quantity', function ($row) {
+                        return number_format($row->quantity, 0, ',', '.');
+                    })
+                    ->editColumn('total_amount', function ($row) {
+                        return 'Rp ' . number_format($row->total_amount, 0, ',', '.');
+                    })
+                    ->make(true);
+            } else {
+                $query = ProductLog::where('product_id', $id)->orderBy('created_at', 'desc');
+                return DataTables::of($query)
+                    ->addIndexColumn()
+                    ->editColumn('created_at', function ($row) {
+                        return $row->created_at->format('d F Y H:i');
+                    })
+                    ->editColumn('added_quantity', function ($row) {
+                        return number_format($row->added_quantity, 0, ',', '.');
+                    })
+                    ->editColumn('last_stock', function ($row) {
+                        return number_format($row->last_stock, 0, ',', '.');
+                    })
+                    ->make(true);
+            }
         }
 
-        return view('manajemen_produk_penawaran.product_detail', compact('product'));
+        // Calculate Product Stats (Current Year)
+        $currentYear = date('Y');
+
+        $totalSoldYear = \App\Models\OrderDetail::join('orders', 'order_details.order_id', '=', 'orders.id')
+            ->where('product_id', $id)
+            ->where('product_id', $id)
+            ->whereYear('orders.created_at', $currentYear)
+            ->sum('order_details.quantity');
+
+        $totalSalesValueYear = \App\Models\OrderDetail::join('orders', 'order_details.order_id', '=', 'orders.id')
+            ->where('product_id', $id)
+            ->where('product_id', $id)
+            ->whereYear('orders.created_at', $currentYear)
+            ->sum('order_details.total_amount');
+
+        return view('manajemen_produk_penawaran.product_detail', compact('product', 'totalSoldYear', 'totalSalesValueYear'));
     }
 
     public function addStock(Request $request, $id)

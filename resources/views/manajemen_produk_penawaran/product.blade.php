@@ -51,7 +51,7 @@
                                         Total Produk Aktif
                                     </div>
                                     <div class="text-secondary">
-                                        150 Produk
+                                        {{ $totalProducts }} Produk
                                     </div>
                                 </div>
                             </div>
@@ -78,7 +78,7 @@
                                         Produk Terlaris (Bulan Ini)
                                     </div>
                                     <div class="text-secondary">
-                                        Beras Premium 5kg
+                                        {{ $topSellingProductName }}
                                     </div>
                                 </div>
                             </div>
@@ -106,7 +106,7 @@
                                         Produk Stok Rendah
                                     </div>
                                     <div class="text-secondary">
-                                        5 Produk
+                                        {{ $lowStockCount }} Produk
                                     </div>
                                 </div>
                             </div>
@@ -133,7 +133,7 @@
                                         Total Nilai Stok
                                     </div>
                                     <div class="text-secondary">
-                                        Rp 120.000.000
+                                        Rp {{ number_format($totalStockValue, 0, ',', '.') }}
                                     </div>
                                 </div>
                             </div>
@@ -567,10 +567,12 @@
                 new Chart(productSalesMonthlyCtx, {
                     type: 'line',
                     data: {
-                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul'],
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov',
+                            'Des'
+                        ],
                         datasets: [{
                             label: 'Unit Terjual',
-                            data: [500, 600, 550, 700, 650, 800, 750], // Contoh data
+                            data: @json($chartSalesData),
                             borderColor: '#007bff',
                             backgroundColor: 'rgba(0, 123, 255, 0.2)',
                             fill: true,
@@ -602,13 +604,13 @@
                 new Chart(productStockCategoryCtx, {
                     type: 'bar',
                     data: {
-                        labels: ['Bahan Pokok', 'Minyak & Lemak', 'Gula & Pemanis', 'Telur & Susu',
-                            'Bumbu Dapur'
-                        ],
+                        labels: @json($chartStockLabels),
                         datasets: [{
                             label: 'Stok Tersedia (Unit)',
-                            data: [500, 300, 150, 200, 100], // Contoh data
-                            backgroundColor: ['#28a745', '#ffc107', '#17a2b8', '#dc3545', '#6c757d'],
+                            data: @json($chartStockData),
+                            backgroundColor: ['#28a745', '#ffc107', '#17a2b8', '#dc3545', '#6c757d',
+                                '#007bff', '#6610f2'
+                            ],
                         }]
                     },
                     options: {
